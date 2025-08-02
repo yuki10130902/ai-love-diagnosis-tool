@@ -1,16 +1,27 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
-  Heart, RotateCcw, Bot, Zap, Brain, Star, TrendingUp,
+  Heart, Bot, Zap, Brain, TrendingUp,
   Target, Play, Shield, Sparkles, Eye, Moon, Compass, BarChart3, ArrowLeft,
   MessageCircle, Calendar, Users, Lightbulb, AlertTriangle
 } from 'lucide-react';
 
+interface Answer {
+  answer: string;
+  type: string;
+}
+
+interface Result {
+  primary: string;
+  scores: Record<string, number>;
+  total: number;
+}
+
 const AILoveDiagnosticTool = () => {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [result, setResult] = useState(null);
-  const [aiAnalyzing, setAiAnalyzing] = useState(false);
-  const [currentScreen, setCurrentScreen] = useState('intro');
+  const [currentQuestion, setCurrentQuestion] = useState<number>(0);
+  const [answers, setAnswers] = useState<Record<number, Answer>>({});
+  const [result, setResult] = useState<Result | null>(null);
+  const [aiAnalyzing, setAiAnalyzing] = useState<boolean>(false);
+  const [currentScreen, setCurrentScreen] = useState<string>('intro');
 
   const questions = [
     {
@@ -446,9 +457,9 @@ const AILoveDiagnosticTool = () => {
     }
   };
 
-  const simulateAIAnalysis = () => {
+  const simulateAIAnalysis = (): Promise<void> => {
     setAiAnalyzing(true);
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       setTimeout(() => {
         setAiAnalyzing(false);
         resolve();
@@ -587,7 +598,7 @@ transform hover:scale-105 shadow-2xl mb-8 relative overflow-hidden"
     }
   };
 
-  const handleAnswer = (questionId, answer, type) => {
+  const handleAnswer = (questionId: number, answer: string, type: string): void => {
     setAnswers(prev => ({
       ...prev,
       [questionId]: { answer, type }
@@ -602,16 +613,16 @@ transform hover:scale-105 shadow-2xl mb-8 relative overflow-hidden"
     }
   };
 
-  const calculateResult = async () => {
+  const calculateResult = async (): Promise<void> => {
     await simulateAIAnalysis();
     
-    const typeCount = {};
-    Object.values(answers).forEach(answer => {
+    const typeCount: Record<string, number> = {};
+    Object.values(answers).forEach((answer: Answer) => {
       typeCount[answer.type] = (typeCount[answer.type] || 0) + 1;
     });
 
     const sortedTypes = Object.entries(typeCount)
-      .sort(([,a], [,b]) => b - a);
+      .sort(([,a], [,b]) => (b as number) - (a as number));
 
     const primaryType = sortedTypes[0][0];
 
@@ -624,15 +635,12 @@ transform hover:scale-105 shadow-2xl mb-8 relative overflow-hidden"
     setCurrentScreen('result');
   };
 
-  const resetQuiz = () => {
-    setCurrentQuestion(0);
-    setAnswers({});
-    setResult(null);
-    setCurrentScreen('intro');
-  };
-
-  const shareToTwitter = () => {
-    const primaryTypeDetail = typeDetails[result.primary];
+  const shareToTwitter = (): void => {
+    if (!result) return;
+    
+    const primaryTypeDetail = typeDetails[result.primary as keyof typeof typeDetails];
+    if (!primaryTypeDetail) return;
+    
     const text = `私の恋愛タイプは「${primaryTypeDetail.title}」でした！\n\n${primaryTypeDetail.description}\n\n#AI恋愛DNA診断`;
     const url = window.location.href;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
@@ -645,7 +653,9 @@ transform hover:scale-105 shadow-2xl mb-8 relative overflow-hidden"
   }
 
   if (currentScreen === 'result' && result) {
-    const primaryTypeDetail = typeDetails[result.primary];
+    const primaryTypeDetail = typeDetails[result.primary as keyof typeof typeDetails];
+    if (!primaryTypeDetail) return null;
+    
     const IconComponent = primaryTypeDetail.icon;
     
     return (
@@ -707,7 +717,7 @@ animate-bounce`}>
                   あなたの特徴
                 </h4>
                 <ul className="space-y-3">
-                  {primaryTypeDetail.traits.map((trait, index) => (
+                  {primaryTypeDetail.traits.map((trait: string, index: number) => (
                     <li key={index} className="flex items-start text-gray-700">
                       <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mr-3 mt-2 flex-shrink-0"></div>
                       <span className="text-sm leading-relaxed">{trait}</span>
@@ -719,7 +729,7 @@ animate-bounce`}>
 
             {/* 詳細アドバイスセクション */}
             <div className="grid md:grid-cols-2 gap-6 mb-6">
-              {Object.entries(primaryTypeDetail.detailedAdvice).map(([key, advice]) => (
+              {Object.entries(primaryTypeDetail.detailedAdvice).map(([key, advice]: [string, any]) => (
                 <div key={key} className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-sm">
                   <h4 className="font-bold text-gray-800 mb-3 text-lg flex items-center">
                     {key === 'loveStyle' && <Heart className="mr-2 text-red-500" size={20} />}
@@ -879,4 +889,3 @@ duration-1000"></div>
 };
 
 export default AILoveDiagnosticTool;
-
